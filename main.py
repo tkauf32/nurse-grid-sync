@@ -23,12 +23,14 @@ def concise_event_title(summary: str) -> str | None:
         return "Night Shift"
     if "day" in normalized:
         return "Day Shift"
+    if "regular shift" in normalized:
+        return "Regular Shift"
     return None
 
 
 def filter_ics(ics_text: str) -> str:
     """
-    Keep only Night Shift, Day Shift, and On Call VEVENT blocks.
+    Keep only Regular Shift, Night Shift, Day Shift, and On Call VEVENT blocks.
     Replace kept event summaries with concise event-category titles.
     Preserve everything else (VCALENDAR header/footer).
     """

@@ -26,6 +26,8 @@ def concise_event_title(summary: str) -> str | None:
         return "Night Shift"
     if "day" in normalized:
         return "Day Shift"
+    if "regular shift" in normalized:
+        return "Regular Shift"
     return None
 
 for line in lines:
