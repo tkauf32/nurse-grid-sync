@@ -16,19 +16,17 @@ in_event = False
 keep_event = False
 
 
-def concise_event_title(summary: str) -> str:
-    """Return the short event category shown in subscribed calendars."""
+def concise_event_title(summary: str) -> str | None:
+    """Return a wanted event category, or None for events to exclude."""
     normalized = summary.casefold()
 
     if "on call" in normalized:
         return "On Call"
     if "night" in normalized:
         return "Night Shift"
-    if "evening" in normalized:
-        return "Evening Shift"
     if "day" in normalized:
         return "Day Shift"
-    return "Regular Shift"
+    return None
 
 for line in lines:
     # Detect start/end of events
@@ -45,10 +43,11 @@ for line in lines:
         if line.startswith("SUMMARY:"):
             # Normalize whitespace and case just in case
             summary = line.strip()
-            if ("Regular Shift" in summary) or ("On Call" in summary):
+            title = concise_event_title(summary)
+            if title:
                 keep_event = True
                 line_ending = "\r\n" if line.endswith("\r\n") else "\n"
-                current_event[-1] = f"SUMMARY:{concise_event_title(summary)}{line_ending}"
+                current_event[-1] = f"SUMMARY:{title}{line_ending}"
 
         if line.startswith("END:VEVENT"):
             # Event block is complete; decide to keep or drop
