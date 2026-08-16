@@ -1,5 +1,4 @@
 import sys
-import re
 
 if len(sys.argv) != 3:
     print(f"Usage: {sys.argv[0]} input.ics output.ics")
@@ -15,6 +14,21 @@ out_lines = []
 current_event = []
 in_event = False
 keep_event = False
+
+
+def concise_event_title(summary: str) -> str:
+    """Return the short event category shown in subscribed calendars."""
+    normalized = summary.casefold()
+
+    if "on call" in normalized:
+        return "On Call"
+    if "night" in normalized:
+        return "Night Shift"
+    if "evening" in normalized:
+        return "Evening Shift"
+    if "day" in normalized:
+        return "Day Shift"
+    return "Regular Shift"
 
 for line in lines:
     # Detect start/end of events
@@ -33,6 +47,8 @@ for line in lines:
             summary = line.strip()
             if ("Regular Shift" in summary) or ("On Call" in summary):
                 keep_event = True
+                line_ending = "\r\n" if line.endswith("\r\n") else "\n"
+                current_event[-1] = f"SUMMARY:{concise_event_title(summary)}{line_ending}"
 
         if line.startswith("END:VEVENT"):
             # Event block is complete; decide to keep or drop

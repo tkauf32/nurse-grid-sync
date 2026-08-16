@@ -1,7 +1,6 @@
 from fastapi import FastAPI, HTTPException, Request, Query
 from fastapi.responses import Response, HTMLResponse
 import os
-import re
 import requests
 from pathlib import Path
 
@@ -14,7 +13,27 @@ BASE_DIR = Path(__file__).parent
 INDEX_PATH = BASE_DIR / "static" / "index.html"
 
 
+def concise_event_title(summary: str) -> str:
+    """Return the short event category shown in subscribed calendars."""
+    normalized = summary.casefold()
+
+    if "on call" in normalized:
+        return "On Call"
+    if "night" in normalized:
+        return "Night Shift"
+    if "evening" in normalized:
+        return "Evening Shift"
+    if "day" in normalized:
+        return "Day Shift"
+    return "Regular Shift"
+
+
 def filter_ics(ics_text: str) -> str:
+    """
+    Keep only VEVENT blocks whose SUMMARY contains 'Regular Shift' or 'On Call'.
+    Replace kept event summaries with concise event-category titles.
+    Preserve everything else (VCALENDAR header/footer).
+    """
     lines = ics_text.splitlines(keepends=True)
 
     out_lines = []
@@ -33,10 +52,11 @@ def filter_ics(ics_text: str) -> str:
             current_event.append(line)
 
             if line.startswith("SUMMARY:"):
-                m = re.match(r"(SUMMARY:.*?(Regular Shift|On Call))", line)
-                if m:
-                    current_event[-1] = m.group(1) + "\n"
+                summary = line.strip()
+                if ("Regular Shift" in summary) or ("On Call" in summary):
                     keep_event = True
+                    line_ending = "\r\n" if line.endswith("\r\n") else "\n"
+                    current_event[-1] = f"SUMMARY:{concise_event_title(summary)}{line_ending}"
 
             if line.startswith("END:VEVENT"):
                 if keep_event:
